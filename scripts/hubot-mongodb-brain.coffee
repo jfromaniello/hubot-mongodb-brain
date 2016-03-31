@@ -38,26 +38,25 @@ module.exports = (robot) ->
 
     ## restore data from mongodb
     db.createCollection 'brain', (err, collection) ->
-      collection.find({type: '_private'}).toArray (err, docs) ->
+      collection.find({}).toArray (err, docs) ->
         return robot.logger.error err if err
-        _private = {}
+        data = {}
         for doc in docs
-          _private[doc.key] = doc.value
-        cache = deepClone _private
-        robot.brain.mergeData {_private: _private}
+          data[doc.key] = doc.value
+        cache = deepClone data
+        robot.brain.mergeData data
         robot.brain.resetSaveInterval 10
         robot.brain.setAutoSave true
 
     ## save data into mongodb
     robot.brain.on 'save', (data) ->
       db.collection 'brain', (err, collection) ->
-        for k,v of data._private
+        for k,v of data
           do (k,v) ->
             return if _.isEqual cache[k], v  # skip not modified key
             robot.logger.debug "save \"#{k}\" into mongodb-brain"
             cache[k] = deepClone v
             collection.update
-              type: '_private'
               key:  k
             ,
               $set:
