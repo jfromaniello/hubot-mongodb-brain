@@ -23,13 +23,15 @@ module.exports = (robot) ->
   mongoUrl = process.env.MONGODB_URL or
              process.env.MONGOLAB_URI or
              process.env.MONGOHQ_URL or
+             process.env.MONGODB_URI or
              'mongodb://localhost/hubot-brain'
 
-  MongoClient.connect mongoUrl, (err, db) ->
+  MongoClient.connect mongoUrl, (err, client) ->
     throw err if err
+    db = client.db()
 
     robot.brain.on 'close', ->
-      db.close()
+      client.close()
 
     robot.logger.info "MongoDB connected"
     robot.brain.setAutoSave false
@@ -42,7 +44,7 @@ module.exports = (robot) ->
         return robot.logger.error err if err
         data = {}
         for doc in docs
-          data[doc.key] = doc.value
+          data[doc._id] = JSON.parse(doc.content)
         cache = deepClone data
         robot.brain.mergeData data
         robot.brain.resetSaveInterval 10
@@ -57,10 +59,10 @@ module.exports = (robot) ->
             robot.logger.debug "save \"#{k}\" into mongodb-brain"
             cache[k] = deepClone v
             collection.update
-              key:  k
+              _id:  k
             ,
               $set:
-                value: v
+                content: JSON.stringify(v)
             ,
               upsert: true
             , (err, res) ->

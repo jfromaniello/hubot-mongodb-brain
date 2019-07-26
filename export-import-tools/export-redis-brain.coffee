@@ -18,6 +18,6 @@ client.on 'error', (err) ->
 client.on 'connect', ->
 
   client.get "#{prefix}:storage", (err, res) ->
-    _private = JSON.parse(res)._private
-    console.log JSON.stringify _private
-    client.end()
+    brain = JSON.parse(res)
+    console.log JSON.stringify brain
+    client.end(true)

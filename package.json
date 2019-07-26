@@ -15,8 +15,9 @@
   "author": "Sho Hashimoto <hashimoto@shokai.org>",
   "license": "MIT",
   "dependencies": {
+    "async": "^3.1.0",
     "lodash": "*",
-    "mongodb": "*"
+    "mongodb": "^3.2.7"
   },
   "devDependencies": {
     "coffee-errors": "*",

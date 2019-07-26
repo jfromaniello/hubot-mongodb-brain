@@ -9,11 +9,11 @@ mongoUrl = process.env.MONGODB_URL or
            process.env.MONGOHQ_URL or
            'mongodb://localhost/hubot-brain'
 
-
-MongoClient.connect mongoUrl, (err, db) ->
+MongoClient.connect mongoUrl, { useNewUrlParser: true }, (err, client) ->
   throw err if err
 
-  console.log "MongoDB connected"
+  db = client.db()
+  console.log "MongoDB connected", mongoUrl
 
   process.stdin.setEncoding 'utf8'
 
@@ -27,20 +27,19 @@ MongoClient.connect mongoUrl, (err, db) ->
     docs = []
     for k,v of data
       docs.push
-        type: '_private'
-        key: k
-        value: v
+        _id: k
+        content: JSON.stringify(v)
 
-    db.collection 'brain', (err, collection) ->
-      collection.drop ->
-        db.createCollection 'brain', (err, collection) ->
-          async.eachSeries docs, (doc, done) ->
-            console.log "insert #{doc.key}"
-            collection.insert doc, done
-          , (errs, ress) ->
-            if errs
-              console.error errs
-              process.exit 1
-            process.exit 0
+    collection = db.collection('brain')
 
+    collection.deleteMany {}, (err) ->
+      throw err if err
+      async.eachSeries docs, (doc, done) ->
+        console.log "insert #{doc._id}"
+        collection.insertOne doc, done
+      , (errs, ress) ->
+        if errs
+          console.error errs
+          process.exit 1
+        process.exit 0
 
